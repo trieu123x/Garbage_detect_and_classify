@@ -1,0 +1,8 @@
+.git/
+__pycache__/
+.vscode/
+dataset/
+runs/
+notebooks/
+*.mp4
+*.avi

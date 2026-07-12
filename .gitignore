@@ -1,0 +1,40 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Large Model Weights (GitHub limit is 100MB)
+*.pth
+*.pt
+*.weights
+*.h5
+
+# Datasets and Large Archives
+*.zip
+*.rar
+*.7z
+dataset/
+data/
+garbage_detector_v2/
+checkpoints/
+weights/
+
+# Video files
+*.mp4
+*.avi
+*.mov
+video/
+
+# Environment
+.venv/
+env/
+venv/
+.env
+
+# Flask
+instance/
+.webassets-cache

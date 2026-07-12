@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garbage Detection & Classification AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ff88;
+            --primary-glow: rgba(0, 255, 136, 0.4);
+            --bg-color: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(15, 23, 42, 1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, rgba(13, 148, 136, 0.15) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, rgba(15, 23, 42, 1) 0, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #00ff88, #00b4db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Glassmorphism Card */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 0.8s ease backwards;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .drop-zone {
+            width: 100%;
+            max-width: 600px;
+            height: 250px;
+            border: 2px dashed var(--glass-border);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(0, 255, 136, 0.05);
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .drop-zone img#preview-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+            z-index: 1;
+            background: #000;
+        }
+
+        .drop-zone-content {
+            z-index: 2;
+            text-align: center;
+            transition: opacity 0.3s ease;
+        }
+
+        .drop-zone-content svg {
+            width: 64px;
+            height: 64px;
+            fill: var(--text-muted);
+            margin-bottom: 1rem;
+            transition: fill 0.3s ease;
+        }
+
+        .drop-zone:hover .drop-zone-content svg {
+            fill: var(--primary);
+        }
+
+        .drop-zone-content p {
+            color: var(--text-muted);
+            font-size: 1rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--text-muted);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        button.btn-analyze {
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #00ff88 0%, #00b4db 100%);
+            color: #0f172a;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        button.btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--primary-glow);
+        }
+
+        button.btn-analyze:disabled {
+            background: #475569;
+            box-shadow: none;
+            cursor: not-allowed;
+            color: #94a3b8;
+            transform: none;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .result-image-container {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-image-container img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .stats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .stat-box {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-box h3 {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-box .number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .details-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .details-list li {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--glass-border);
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .class-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .class-count {
+            background: var(--primary);
+            color: #0f172a;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        /* Loading Overlay */
+        .loader-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(0, 255, 136, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        @media (max-width: 900px) {
+            .results-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Smart Garbage Detection</h1>
+        <p class="subtitle">Upload an image and let AI detect and classify trash objects</p>
+    </header>
+
+    <div class="container">
+        <!-- Upload Section -->
+        <div class="glass-card upload-section" id="upload-section">
+            <div class="drop-zone" id="drop-zone">
+                <img id="preview-img" alt="Preview">
+                <div class="drop-zone-content" id="drop-zone-content">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                    </svg>
+                    <p>Drag & Drop Image Here<br><br>or Click to Browse</p>
+                </div>
+                <input type="file" id="file-input" accept="image/jpeg, image/png, image/jpg">
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="url-input" placeholder="Or paste an image URL here...">
+                <button class="btn-analyze" id="btn-analyze">Analyze Image</button>
+            </div>
+            
+            <div id="error-msg" style="color: #ef4444; display: none; text-align: center; width: 100%;"></div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="glass-card results-section" id="results-section">
+            <div class="result-image-container">
+                <img id="result-img" src="" alt="Analyzed Result">
+            </div>
+            
+            <div class="stats-container">
+                <div class="stat-box">
+                    <h3>Total Objects Detected</h3>
+                    <div class="number" id="total-objects">0</div>
+                </div>
+                
+                <div class="stat-box" style="text-align: left; padding: 1.5rem;">
+                    <h3 style="margin-bottom: 1rem;">Detected Classes</h3>
+                    <ul class="details-list" id="stats-list">
+                        <!-- Items will be injected here via JS -->
+                    </ul>
+                </div>
+
+                <button class="btn-analyze" style="width: 100%; margin-top: auto; background: rgba(255,255,255,0.1); color: #fff; box-shadow: none;" onclick="resetUI()">Upload Another Image</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loader -->
+    <div class="loader-overlay" id="loader">
+        <div class="spinner"></div>
+        <h3 style="color: #fff;">AI is analyzing...</h3>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const urlInput = document.getElementById('url-input');
+        const btnAnalyze = document.getElementById('btn-analyze');
+        const previewImg = document.getElementById('preview-img');
+        const dropZoneContent = document.getElementById('drop-zone-content');
+        const loader = document.getElementById('loader');
+        const resultsSection = document.getElementById('results-section');
+        const uploadSection = document.getElementById('upload-section');
+        const resultImg = document.getElementById('result-img');
+        const totalObjects = document.getElementById('total-objects');
+        const statsList = document.getElementById('stats-list');
+        const errorMsg = document.getElementById('error-msg');
+
+        let currentFile = null;
+
+        // Drag & Drop Handlers
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+        });
+
+        urlInput.addEventListener('input', () => {
+            if (urlInput.value.trim() !== '') {
+                previewImg.src = urlInput.value;
+                previewImg.style.display = 'block';
+                dropZoneContent.style.opacity = '0';
+                currentFile = null;
+            } else if (!currentFile) {
+                previewImg.style.display = 'none';
+                dropZoneContent.style.opacity = '1';
+            }
+        });
+
+        function handleFile(file) {
+            currentFile = file;
+            urlInput.value = '';
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                previewImg.style.display = 'block';
+                dropZoneContent.style.opacity = '0';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        btnAnalyze.addEventListener('click', async () => {
+            const url = urlInput.value.trim();
+            if (!currentFile && !url) {
+                showError("Please upload an image or provide a URL.");
+                return;
+            }
+
+            errorMsg.style.display = 'none';
+            loader.style.display = 'flex';
+
+            const formData = new FormData();
+            if (currentFile) formData.append('image', currentFile);
+            else formData.append('url', url);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok || data.error) {
+                    showError(data.error || "An error occurred during analysis.");
+                    loader.style.display = 'none';
+                    return;
+                }
+
+                renderResults(data);
+
+            } catch (err) {
+                showError("Failed to connect to the server.");
+            } finally {
+                loader.style.display = 'none';
+            }
+        });
+
+        function renderResults(data) {
+            uploadSection.style.display = 'none';
+            resultsSection.style.display = 'grid';
+            
+            resultImg.src = data.image_base64;
+            totalObjects.innerText = data.total_objects;
+            
+            statsList.innerHTML = '';
+            if (data.total_objects === 0) {
+                statsList.innerHTML = '<li style="justify-content:center; color: var(--text-muted);">No objects detected</li>';
+                return;
+            }
+
+            for (const [className, count] of Object.entries(data.stats)) {
+                statsList.innerHTML += `
+                    <li>
+                        <span class="class-name">${className}</span>
+                        <span class="class-count">${count}</span>
+                    </li>
+                `;
+            }
+        }
+
+        function resetUI() {
+            resultsSection.style.display = 'none';
+            uploadSection.style.display = 'flex';
+            previewImg.style.display = 'none';
+            dropZoneContent.style.opacity = '1';
+            fileInput.value = '';
+            urlInput.value = '';
+            currentFile = null;
+            errorMsg.style.display = 'none';
+        }
+
+        function showError(msg) {
+            errorMsg.innerText = msg;
+            errorMsg.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
